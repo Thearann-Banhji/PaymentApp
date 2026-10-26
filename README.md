@@ -1,4 +1,4 @@
-# BillFlow
+# Banhji
 
 A cross-platform customer bill-payment app built with Expo, React Native, and TypeScript. The interface is designed for iOS and Android and follows the supplied customer-home reference.
 
@@ -27,7 +27,7 @@ This project uses Expo SDK 58. If the latest Expo Go on your device does not sup
    npm run start -- --dev-client
    ```
 
-5. Open the installed **BillFlow** development app on your phone.
+5. Open the installed **Banhji** development app on your phone.
 
 The first Android build requires Android Studio's Android SDK and Java/Gradle build tools. The development build is separate from Expo Go and matches this project's native SDK.
 

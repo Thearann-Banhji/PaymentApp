@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "BillFlow",
+    "name": "Banhji",
     "slug": "billflow",
     "version": "1.0.0",
     "scheme": "billflow",
     "orientation": "portrait",
-    "icon": "./assets/app-icon.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
@@ -15,8 +15,7 @@
       "package": "com.paymentapp.billflow",
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
-        "foregroundImage": "./assets/app-icon.png",
-        "backgroundImage": "./assets/android-icon-background.png",
+        "foregroundImage": "./assets/android-icon-foreground.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false
@@ -30,11 +29,18 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow BillFlow to scan your sign-in QR code.",
+          "cameraPermission": "Allow Banhji to scan your sign-in QR code.",
           "recordAudioAndroid": false
         }
       ],
       "expo-status-bar",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Banhji to use your photos for your profile picture.",
+          "microphonePermission": false
+        }
+      ],
       [
         "expo-build-properties",
         {

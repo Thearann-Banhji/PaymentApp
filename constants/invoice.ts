@@ -1,3 +1,5 @@
+export const INSTITUTE_ID = 'inst-28378586';
+
 export type Invoice = {
   id: string;
   code: string;

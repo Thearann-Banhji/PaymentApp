@@ -1,8 +1,10 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useLanguage } from '../i18n/LanguageProvider';
 import { languages, translations } from '../i18n/translations';
+import { useThemedStyles, type AccentColors } from '../theme/ThemeProvider';
 
 export function LanguageSwitcher() {
+  const styles = useThemedStyles(createStyles);
   const { language, setLanguage, t } = useLanguage();
 
   return (
@@ -27,7 +29,8 @@ export function LanguageSwitcher() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: AccentColors) =>
+  StyleSheet.create({
   container: {
     alignSelf: 'flex-end',
     backgroundColor: '#e4edfb',
@@ -38,5 +41,5 @@ const styles = StyleSheet.create({
   option: { borderRadius: 9, paddingHorizontal: 12, paddingVertical: 6 },
   optionSelected: { backgroundColor: '#ffffff' },
   text: { color: '#6f84a8', fontSize: 12, fontWeight: '600' },
-  textSelected: { color: '#2160e8' },
+  textSelected: { color: c.primary },
 });

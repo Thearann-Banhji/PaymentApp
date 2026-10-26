@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
@@ -12,9 +12,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
+import { parseProfileQr, saveProfileDetails } from '../hooks/useProfileDetails';
+import { removeProfilePhoto } from '../hooks/useProfilePhoto';
 import { useLanguage } from '../i18n/LanguageProvider';
+import { useTheme, useThemedStyles, type AccentColors } from '../theme/ThemeProvider';
 
 export default function SignInScreen() {
+  const { colors: c } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const [permission, requestPermission] = useCameraPermissions();
   const { t } = useLanguage();
@@ -22,19 +27,28 @@ export default function SignInScreen() {
   // The camera can emit several scan events before the re-render unmounts it.
   const scanLock = useRef(false);
 
-  const handleCodeScanned = () => {
+  const handleCodeScanned = async ({ data }: BarcodeScanningResult) => {
     if (scanLock.current) return;
     scanLock.current = true;
-    setScanned(true);
+    const profile = parseProfileQr(data);
+    if (!profile) {
+      setScanned(true);
+      return;
+    }
+    try {
+      await saveProfileDetails(profile);
+      // A new sign-in starts without the previous account's photo.
+      removeProfilePhoto();
+      router.replace('/(tabs)');
+    } catch (error) {
+      console.error('Unable to save scanned profile.', error);
+      setScanned(true);
+    }
   };
 
   const rescan = () => {
     scanLock.current = false;
     setScanned(false);
-  };
-
-  const continueWithDemo = () => {
-    router.replace('/(tabs)');
   };
 
   return (
@@ -49,7 +63,7 @@ export default function SignInScreen() {
             <View style={styles.brandIcon}>
               <Ionicons name="receipt" size={26} color="#ffffff" />
             </View>
-            <Text style={styles.brandName}>BillFlow</Text>
+            <Text style={styles.brandName}>Banhji</Text>
           </View>
 
           <Text style={styles.title}>{t.signIn.title}</Text>
@@ -71,9 +85,9 @@ export default function SignInScreen() {
               <View style={styles.cameraPlaceholder}>
                 <View style={styles.cameraIcon}>
                   <Ionicons
-                    name={scanned ? 'qr-code' : 'camera-outline'}
+                    name={scanned ? 'alert-circle-outline' : 'camera-outline'}
                     size={32}
-                    color="#2160e8"
+                    color={c.primary}
                   />
                 </View>
                 <Text style={styles.cameraTitle}>
@@ -119,39 +133,21 @@ export default function SignInScreen() {
             <Ionicons name="shield-checkmark-outline" size={19} color="#7188ad" />
             <Text style={styles.secureNoteText}>{t.signIn.secureNote}</Text>
           </View>
-
-          <View style={styles.separator}>
-            <View style={styles.separatorLine} />
-            <Text style={styles.separatorText}>{t.signIn.or}</Text>
-            <View style={styles.separatorLine} />
-          </View>
-
-          <Pressable
-            accessibilityRole="button"
-            onPress={continueWithDemo}
-            style={({ pressed }) => [
-              styles.demoButton,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Text style={styles.demoButtonText}>{t.signIn.demoButton}</Text>
-            <Ionicons name="arrow-forward" size={19} color="#ffffff" />
-          </Pressable>
-          <Text style={styles.demoNote}>{t.signIn.demoNote}</Text>
         </ScrollView>
       </LinearGradient>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (c: AccentColors) =>
+  StyleSheet.create({
   safeArea: { backgroundColor: '#f5f9ff', flex: 1 },
   background: { flex: 1 },
   content: { flexGrow: 1, paddingHorizontal: 24, paddingBottom: 20, paddingTop: 16 },
   brand: { alignItems: 'center', flexDirection: 'row', justifyContent: 'center', marginBottom: 30, marginTop: 8 },
   brandIcon: {
     alignItems: 'center',
-    backgroundColor: '#2863ea',
+    backgroundColor: c.primaryStrong,
     borderRadius: 13,
     height: 44,
     justifyContent: 'center',
@@ -195,7 +191,7 @@ const styles = StyleSheet.create({
   },
   cameraIcon: {
     alignItems: 'center',
-    backgroundColor: '#eaf2ff',
+    backgroundColor: c.soft,
     borderRadius: 28,
     height: 56,
     justifyContent: 'center',
@@ -204,7 +200,7 @@ const styles = StyleSheet.create({
   cameraTitle: { color: '#142c54', fontSize: 16, fontWeight: '700', marginTop: 13 },
   cameraHint: { color: '#7489ad', fontSize: 12, lineHeight: 18, marginTop: 7, textAlign: 'center' },
   permissionButton: {
-    backgroundColor: '#2863ea',
+    backgroundColor: c.primaryStrong,
     borderRadius: 11,
     marginTop: 15,
     paddingHorizontal: 16,
@@ -212,7 +208,7 @@ const styles = StyleSheet.create({
   },
   permissionButtonText: { color: '#ffffff', fontSize: 13, fontWeight: '700' },
   rescanButton: { marginTop: 12, paddingHorizontal: 12, paddingVertical: 8 },
-  rescanButtonText: { color: '#2160e8', fontSize: 13, fontWeight: '700' },
+  rescanButtonText: { color: c.primary, fontSize: 13, fontWeight: '700' },
   secureNote: {
     alignItems: 'flex-start',
     flexDirection: 'row',
@@ -220,19 +216,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
   },
   secureNoteText: { color: '#7188ad', flex: 1, fontSize: 11, lineHeight: 16, marginLeft: 8 },
-  separator: { alignItems: 'center', flexDirection: 'row', marginTop: 21 },
-  separatorLine: { backgroundColor: '#dce6f4', flex: 1, height: 1 },
-  separatorText: { color: '#8a9ab4', fontSize: 11, fontWeight: '700', marginHorizontal: 13 },
-  demoButton: {
-    alignItems: 'center',
-    backgroundColor: '#2863ea',
-    borderRadius: 13,
-    flexDirection: 'row',
-    height: 54,
-    justifyContent: 'center',
-    marginTop: 18,
-  },
-  demoButtonText: { color: '#ffffff', fontSize: 14, fontWeight: '700', marginRight: 9 },
-  demoNote: { color: '#8292aa', fontSize: 10, lineHeight: 15, marginTop: 10, textAlign: 'center' },
   pressed: { opacity: 0.82 },
 });

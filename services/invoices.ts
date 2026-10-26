@@ -1,4 +1,5 @@
 import type { Invoice } from "../constants/invoice";
+import { rangeDates, type DateRange } from "./dateRange";
 
 const RECEIVABLE_URL =
   "https://dev-apis.banhji.com/transaction-billing/wcp-receivable/institute";
@@ -48,5 +49,60 @@ export async function getCustomerInvoices(
     reference: item.referenceNo,
     date: item.date,
     amountInRiel: item.amount,
+  }));
+}
+
+// Production: https://apis.banhji.com/transaction-billing/invoice/institute
+const INVOICE_LIST_URL =
+  "https://dev-apis.banhji.com/transaction-billing/invoice/institute";
+
+export type InvoiceHistoryItem = Invoice & { paid: boolean };
+
+type InvoiceListItem = {
+  id: string;
+  referenceNo: string;
+  date: string;
+  /** Amount in KHR; exchangeAmount is the base-currency value. */
+  amount: number;
+  remainingAmount: number;
+};
+
+export async function getInvoiceHistory(
+  instituteId: string,
+  customerId: string,
+  range: DateRange,
+): Promise<InvoiceHistoryItem[]> {
+  const response = await fetch(`${INVOICE_LIST_URL}/${instituteId}/list`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      search: "",
+      type: "Invoice funnel",
+      ...rangeDates(range),
+      key: {},
+      isSummarize: 0,
+      empId: "",
+      id: customerId,
+      segId: "",
+      locId: "",
+      status: 0,
+      referenceNo: "",
+      invType: "-",
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(`Invoice list request failed (${response.status})`);
+  }
+  const body = (await response.json()) as { data?: InvoiceListItem[] };
+  return (body.data ?? []).map((item) => ({
+    id: item.id,
+    code: "",
+    reference: item.referenceNo,
+    date: item.date.slice(0, 10),
+    amountInRiel: item.amount,
+    paid: item.remainingAmount <= 0,
   }));
 }
